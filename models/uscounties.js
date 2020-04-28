@@ -1,4 +1,5 @@
-const mongoose = require('../database');
+// const mongoose = require('../database');
+const mongoose = require('mongoose');
 
 const recordSchema = new mongoose.Schema({
   date: {
