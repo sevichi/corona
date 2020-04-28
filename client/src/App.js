@@ -2,6 +2,14 @@ import React, { Component } from 'react';
 import axios from 'axios';
 // import './App.css';
 
+// ES6
+import ReactMapboxGl, { Layer, Feature } from 'react-mapbox-gl';
+ 
+const Map = ReactMapboxGl({
+  accessToken:
+    'pk.eyJ1Ijoic2V2aWNoaSIsImEiOiJjazlqNzJmeGcxaDFuM2Vud3RjeGFhNDBnIn0.O2duU4NkncmDSjjjzzd5uQ'
+});
+
 class App extends Component {
   // initialize our state
   state = {
@@ -47,6 +55,19 @@ class App extends Component {
     const { data } = this.state;
     return (
       <div>
+        <Map
+          style="mapbox://styles/mapbox/dark-v10"
+          center= {[-97,39]}          
+          containerStyle={{
+            height: '50vh',
+            width: '50vw'
+          }}
+          zoom={[3]}
+        >
+          <Layer type="symbol" id="marker" layout={{ 'icon-image': 'harbor-15' }}>
+            <Feature coordinates={[-0.13235092163085938,51.518250335096376]} />
+          </Layer>
+        </Map>
         <ul>
           {data.length <= 0
             ? 'NO DB ENTRIES YET'
