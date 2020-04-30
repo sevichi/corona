@@ -5,14 +5,32 @@ import ReactMapboxGl, { Layer, Feature, GeoJSONLayer } from 'react-mapbox-gl';
 // DayPicker
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
- 
+// Material UI
+import { makeStyles } from '@material-ui/core/styles';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import Paper from '@material-ui/core/Paper';
+
+// map init
 const Map = ReactMapboxGl({
   accessToken:
     'pk.eyJ1Ijoic2V2aWNoaSIsImEiOiJjazlqNzJmeGcxaDFuM2Vud3RjeGFhNDBnIn0.O2duU4NkncmDSjjjzzd5uQ'
 });
 
+// api call
 const stateDataQuery = '/api/getStateData?date=';
 var dateSelection = '2020-04-17';
+
+// table styles
+const useStyles = makeStyles({
+  table: {
+    minWidth: 400,
+  },
+});
 
 class App extends Component {
   // initialize our state
@@ -51,7 +69,6 @@ class App extends Component {
     var date = this.formatDate(day);
     this.setState({ selectedDay: date });
     this.getDataFromDb(stateDataQuery, date);
-    console.log(this.state.geojson);
   }
 
   // when component mounts, first thing it does is fetch all existing data in our db
@@ -96,6 +113,7 @@ class App extends Component {
     const { data } = this.state;
     const { geojson } = this.state;
     const { selectedDay } = this.state;
+    const classes = useStyles;
 
     return (
       <div>
@@ -103,8 +121,8 @@ class App extends Component {
           style="mapbox://styles/mapbox/dark-v10"
           center= {[-97,39]}          
           containerStyle={{
-            height: '75vh',
-            width: '90vw'
+            height: '80vh',
+            width: '99vw'
           }}
           zoom={[3]}
           id='map'
@@ -119,17 +137,29 @@ class App extends Component {
         </Map>
         <p>Day: { selectedDay }</p>
         <DayPickerInput onDayChange={this.handleDayChange} />
-        <ul>
-          {data.length <= 0
-            ? 'NO DB ENTRIES YET'
-            : data.map((dat, index) => (
-                <li style={{ padding: '10px' }} key={index}>
-                  <span style={{ color: 'gray' }}> State: </span> {dat.state} <br/>
-                  <span style={{ color: 'gray' }}> Cases: </span> {dat.cases} <br/>
-                  <span style={{ color: 'gray' }}> Deaths: </span> {dat.deaths}
-                </li>
+        <TableContainer component={Paper}>
+          <Table className={classes.table} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>State</TableCell>
+                <TableCell align="right">Cases</TableCell>
+                <TableCell align="right">Deaths</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.map((dat, index) => (
+                <TableRow key={index}>
+                  <TableCell component="th" scope="row">
+                    {dat.state}
+                  </TableCell>
+                  <TableCell align="right">{dat.cases}</TableCell>
+                  <TableCell align="right">{dat.deaths}</TableCell>
+                </TableRow>
               ))}
-        </ul>
+            </TableBody>
+          </Table>
+        </TableContainer>
+
       </div>      
     );
   }
