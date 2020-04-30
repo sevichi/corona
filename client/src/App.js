@@ -1,14 +1,18 @@
 import React, { Component } from 'react';
 import axios from 'axios';
-// import './App.css';
-
-// ES6
-import ReactMapboxGl, { Layer, Feature } from 'react-mapbox-gl';
+// Mapbox
+import ReactMapboxGl, { Layer, Feature, GeoJSONLayer } from 'react-mapbox-gl';
+// DayPicker
+import DayPickerInput from 'react-day-picker/DayPickerInput';
+import 'react-day-picker/lib/style.css';
  
 const Map = ReactMapboxGl({
   accessToken:
     'pk.eyJ1Ijoic2V2aWNoaSIsImEiOiJjazlqNzJmeGcxaDFuM2Vud3RjeGFhNDBnIn0.O2duU4NkncmDSjjjzzd5uQ'
 });
+
+const stateDataQuery = '/api/getStateData?date=';
+var dateSelection = '2020-04-17';
 
 class App extends Component {
   // initialize our state
@@ -20,15 +24,45 @@ class App extends Component {
     idToDelete: null,
     idToUpdate: null,
     objectToUpdate: null,
+    selectedDay: '2020-04-17',
+    geojson: [],
   };
+
+  constructor(props) {
+    super(props);
+    this.handleDayChange = this.handleDayChange.bind(this);
+    // this.state = {
+    //   selectedDay: undefined,
+    // };
+  }
+  
+  formatDate(date) {
+      var d = new Date(date),
+          month = '' + (d.getMonth() + 1),
+          day = '' + d.getDate(),
+          year = d.getFullYear();
+
+      if (month.length < 2) 
+          month = '0' + month;
+      if (day.length < 2) 
+          day = '0' + day;
+
+      return [year, month, day].join('-');
+  }
+
+  handleDayChange(day) {
+    var date = this.formatDate(day);
+    this.setState({ selectedDay: date });
+    this.getDataFromDb(stateDataQuery, date);
+  }
 
   // when component mounts, first thing it does is fetch all existing data in our db
   // then we incorporate a polling logic so that we can easily see if our db has
   // changed and implement those changes into our UI
   componentDidMount() {
-    this.getDataFromDb();
+    this.getDataFromDb(stateDataQuery, dateSelection);
     if (!this.state.intervalIsSet) {
-      let interval = setInterval(this.getDataFromDb, 1000);
+      let interval = setInterval(this.getDataFromDb(stateDataQuery, dateSelection), 1000);
       this.setState({ intervalIsSet: interval });
     }
   }
@@ -44,8 +78,9 @@ class App extends Component {
 
   // our first get method that uses our backend api to
   // fetch data from our data base
-  getDataFromDb = () => {
-    fetch('/api/getStateData?date=2020-02-25')
+  getDataFromDb = (stateDataQuery, dateSelection) => {
+    console.log(dateSelection);
+    fetch(stateDataQuery + dateSelection)
       .then((data) => data.json())
       .then((res) => this.setState({ data: res.data }))
       .catch((err) => console.log(err));
@@ -53,21 +88,26 @@ class App extends Component {
 
   render() {
     const { data } = this.state;
+    // const { geojson } = this.state;
+    const { selectedDay } = this.state;
     return (
       <div>
         <Map
           style="mapbox://styles/mapbox/dark-v10"
           center= {[-97,39]}          
           containerStyle={{
-            height: '50vh',
-            width: '50vw'
+            height: '75vh',
+            width: '90vw'
           }}
           zoom={[3]}
+          id='map'
         >
           <Layer type="symbol" id="marker" layout={{ 'icon-image': 'harbor-15' }}>
             <Feature coordinates={[-0.13235092163085938,51.518250335096376]} />
           </Layer>
         </Map>
+        <p>Day: { selectedDay }</p>
+        <DayPickerInput onDayChange={this.handleDayChange} />
         <ul>
           {data.length <= 0
             ? 'NO DB ENTRIES YET'

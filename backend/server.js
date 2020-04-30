@@ -20,13 +20,16 @@ const dbpath = 'mongodb://localhost/covid-19';
 mongoose.connect(dbpath, { useNewUrlParser: true });
 let db = mongoose.connection;
 
-// Check connectino to Mongodb
+// Check connection to Mongodb
 db.once('open', () => console.log('connected to the database'));
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 module.exports = mongoose;
 
 app.use(cors());
+
+// import state data
+const states = require('./us-states');
 
 // routes here
 router.get('/getData', (req, res) => {
