@@ -25,15 +25,12 @@ class App extends Component {
     idToUpdate: null,
     objectToUpdate: null,
     selectedDay: '2020-04-17',
-    geojson: [],
+    geojson: {'type': 'FeatureCollection', 'features': []},
   };
 
   constructor(props) {
     super(props);
     this.handleDayChange = this.handleDayChange.bind(this);
-    // this.state = {
-    //   selectedDay: undefined,
-    // };
   }
   
   formatDate(date) {
@@ -54,6 +51,7 @@ class App extends Component {
     var date = this.formatDate(day);
     this.setState({ selectedDay: date });
     this.getDataFromDb(stateDataQuery, date);
+    console.log(this.state.geojson);
   }
 
   // when component mounts, first thing it does is fetch all existing data in our db
@@ -61,6 +59,7 @@ class App extends Component {
   // changed and implement those changes into our UI
   componentDidMount() {
     this.getDataFromDb(stateDataQuery, dateSelection);
+    this.getGeojson();
     if (!this.state.intervalIsSet) {
       let interval = setInterval(this.getDataFromDb(stateDataQuery, dateSelection), 1000);
       this.setState({ intervalIsSet: interval });
@@ -79,17 +78,25 @@ class App extends Component {
   // our first get method that uses our backend api to
   // fetch data from our data base
   getDataFromDb = (stateDataQuery, dateSelection) => {
-    console.log(dateSelection);
     fetch(stateDataQuery + dateSelection)
       .then((data) => data.json())
       .then((res) => this.setState({ data: res.data }))
       .catch((err) => console.log(err));
   };
 
+  // supply the states geojson data
+  getGeojson = () => {
+    fetch('/api/getGeojsonData')
+      .then((data) => data.json())
+      .then((res) => this.setState({ geojson: res.geojson }))
+      .catch((err) => console.log(err));
+  };
+
   render() {
     const { data } = this.state;
-    // const { geojson } = this.state;
+    const { geojson } = this.state;
     const { selectedDay } = this.state;
+
     return (
       <div>
         <Map
@@ -102,9 +109,13 @@ class App extends Component {
           zoom={[3]}
           id='map'
         >
-          <Layer type="symbol" id="marker" layout={{ 'icon-image': 'harbor-15' }}>
-            <Feature coordinates={[-0.13235092163085938,51.518250335096376]} />
-          </Layer>
+          <GeoJSONLayer
+            data={geojson}
+            fillPaint={{
+              "fill-color": "#FED976",
+              "fill-opacity": 0.7,
+            }}
+          />
         </Map>
         <p>Day: { selectedDay }</p>
         <DayPickerInput onDayChange={this.handleDayChange} />

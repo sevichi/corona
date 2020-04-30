@@ -30,13 +30,27 @@ app.use(cors());
 
 // import state data
 const states = require('./us-states');
+const geojson = {};
+geojson['type'] = 'FeatureCollection';
+geojson['features'] = [];
+
+var style = {
+  fillColor: '#FED976',
+  weight: 2,
+  opacity: 1,
+  color: 'white',
+  dashArray: '3',
+  fillOpacity: 0.7,
+};
+
+states['features'].forEach(ft => {
+  ft['style'] = style;
+  geojson['features'].push(ft);
+});
 
 // routes here
-router.get('/getData', (req, res) => {
-  Record.find({}, function(err, docs) {
-    if (err) return res.json({ success: false, error: err });
-    return res.json({ success: true, data: docs });
-  });
+router.get('/getGeojsonData', (req, res) => {
+  return res.json({success: true, geojson: geojson});
 });
 
 router.get('/getStateData', (req, res) => {
