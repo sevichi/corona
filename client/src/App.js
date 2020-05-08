@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import axios from 'axios';
 // Mapbox
 import ReactMapboxGl, { Layer, Feature, GeoJSONLayer } from 'react-mapbox-gl';
+import * as MapboxGL from 'mapbox-gl';
 // DayPicker
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
@@ -21,8 +22,19 @@ const Map = ReactMapboxGl({
     'pk.eyJ1Ijoic2V2aWNoaSIsImEiOiJjazlqNzJmeGcxaDFuM2Vud3RjeGFhNDBnIn0.O2duU4NkncmDSjjjzzd5uQ'
 });
 
-// api call
+// map styles
+const linePaint: MapboxGL.LinePaint = {
+  'line-color': 'white',
+  'line-width': 2,
+};
+const fillPaint: MapboxGL.fillPaint = {
+  "fill-color": "white",
+  "fill-opacity": 0.7,
+}
+
+// api calls
 const stateDataQuery = '/api/getStateData?date=';
+const geojsonQuery = '/api/getGeojsonData?date=';
 var dateSelection = '2020-04-17';
 
 // table styles
@@ -31,6 +43,13 @@ const useStyles = makeStyles({
     minWidth: 400,
   },
 });
+
+var newgeojson = {}
+newgeojson['geojson'] = {'type': 'FeatureCollection', 'features': []};
+newgeojson['fillPaint'] = fillPaint;
+
+var geojsonList = [];
+geojsonList.push(newgeojson);
 
 class App extends Component {
   // initialize our state
@@ -43,7 +62,7 @@ class App extends Component {
     idToUpdate: null,
     objectToUpdate: null,
     selectedDay: '2020-04-17',
-    geojson: {'type': 'FeatureCollection', 'features': []},
+    geojson: geojsonList,
   };
 
   constructor(props) {
@@ -69,6 +88,7 @@ class App extends Component {
     var date = this.formatDate(day);
     this.setState({ selectedDay: date });
     this.getDataFromDb(stateDataQuery, date);
+    this.getGeojson(geojsonQuery, date);
   }
 
   // when component mounts, first thing it does is fetch all existing data in our db
@@ -76,7 +96,7 @@ class App extends Component {
   // changed and implement those changes into our UI
   componentDidMount() {
     this.getDataFromDb(stateDataQuery, dateSelection);
-    this.getGeojson();
+    this.getGeojson(geojsonQuery, dateSelection);
     if (!this.state.intervalIsSet) {
       let interval = setInterval(this.getDataFromDb(stateDataQuery, dateSelection), 1000);
       this.setState({ intervalIsSet: interval });
@@ -97,13 +117,13 @@ class App extends Component {
   getDataFromDb = (stateDataQuery, dateSelection) => {
     fetch(stateDataQuery + dateSelection)
       .then((data) => data.json())
-      .then((res) => this.setState({ data: res.data }))
+      .then((res) => this.setState({ data: res.data}))
       .catch((err) => console.log(err));
   };
 
   // supply the states geojson data
-  getGeojson = () => {
-    fetch('/api/getGeojsonData')
+  getGeojson = (geojsonQuery, dateSelection) => {
+    fetch(geojsonQuery + dateSelection)
       .then((data) => data.json())
       .then((res) => this.setState({ geojson: res.geojson }))
       .catch((err) => console.log(err));
@@ -111,29 +131,33 @@ class App extends Component {
 
   render() {
     const { data } = this.state;
-    const { geojson } = this.state;
+
+    const geojson = this.state.geojson;
+
     const { selectedDay } = this.state;
     const classes = useStyles;
 
     return (
-      <div>
+      <div style={{justifyContent: 'center'}}>
         <Map
           style="mapbox://styles/mapbox/dark-v10"
           center= {[-97,39]}          
           containerStyle={{
-            height: '80vh',
+            height: '75vh',
             width: '99vw'
           }}
           zoom={[3]}
           id='map'
         >
-          <GeoJSONLayer
-            data={geojson}
-            fillPaint={{
-              "fill-color": "#FED976",
-              "fill-opacity": 0.7,
-            }}
+        {geojson.length <= 0 
+        ? 'NO GEOJSON'
+        : geojson.map((gl, index) => (
+          <GeoJSONLayer key={index}
+            data={gl.geojson}
+            fillPaint={gl.fillPaint}
+            linePaint={linePaint}
           />
+          ))}
         </Map>
         <p>Day: { selectedDay }</p>
         <DayPickerInput onDayChange={this.handleDayChange} />
@@ -147,7 +171,9 @@ class App extends Component {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((dat, index) => (
+              {data.length <= 0
+              ? 'NO DB ENTRIES YET'
+              : data.map((dat, index) => (
                 <TableRow key={index}>
                   <TableCell component="th" scope="row">
                     {dat.state}

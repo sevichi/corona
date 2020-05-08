@@ -34,23 +34,90 @@ const geojson = {};
 geojson['type'] = 'FeatureCollection';
 geojson['features'] = [];
 
-var style = {
-  fillColor: '#FED976',
-  weight: 2,
-  opacity: 1,
-  color: 'white',
-  dashArray: '3',
-  fillOpacity: 0.7,
-};
-
 states['features'].forEach(ft => {
-  ft['style'] = style;
   geojson['features'].push(ft);
 });
+// geojson['features'].push(states['features'][0]);
+// geojson['features'].push(states['features'][3]);
+
+// color function
+function getColor(c) {
+  return c > 10000 ? '#800026' :
+         c > 5000  ? '#BD0026' :
+         c > 1000  ? '#E31A1C' :
+         c > 500   ? '#FC4E2A' :
+         c > 100   ? '#FD8D3C' :
+         c > 10    ? '#FEB24C' :
+         c > 0     ? '#FED976' :
+                     '#FFEDA0';
+}
 
 // routes here
 router.get('/getGeojsonData', (req, res) => {
-  return res.json({success: true, geojson: geojson});
+  if (!req.query.date) {
+    return res.json({success: true, geojson: geojson});
+
+  } else if (req.query.date) {
+    var listOfgeojson = [];
+
+    // count the number of states
+    var numStates = states['features'].length;
+
+    function checkCount() {
+      if (numStates == 0) {
+          return res.json({success: true, geojson: listOfgeojson});
+   
+      };
+    };
+
+    states['features'].forEach(ft => {
+      State.find({date: req.query.date, state: ft['properties']['name']}, (err, docs) => {
+        // new object with layer and style
+        var newgeojson = {};
+
+        // new layer
+        var layer = {};
+        layer['type'] = 'FeatureCollection';
+        layer['features'] = [];
+
+        // new style
+        var fillPaint = {};
+        fillPaint['fill-opacity'] = 0.7;
+        if (docs.length) {
+          // console.log(docs[0].state, getColor(docs[0].cases))
+          // create the fill color
+          fillPaint['fill-color'] = getColor(docs[0].cases);
+          newgeojson['fillPaint'] = fillPaint;
+
+          // create the geojson layer
+          layer['features'].push(ft);
+          newgeojson['geojson'] = layer;
+
+          // push the layer and geojson into data array
+          listOfgeojson.push(newgeojson);
+
+          // check the count
+          numStates--;
+          checkCount();
+        } else {
+          // create the fill color for 0 cases
+          fillPaint['fill-color'] = getColor(0);
+          newgeojson['fillPaint'] = fillPaint;
+
+          // create the geojson layer
+          layer['features'].push(ft);
+          newgeojson['geojson'] = layer;
+
+          // push the layer and geojson into data array
+          listOfgeojson.push(newgeojson);
+
+          // check the count
+          numStates--;
+          checkCount();
+        };
+      });
+    });    
+  }
 });
 
 router.get('/getStateData', (req, res) => {
@@ -58,32 +125,7 @@ router.get('/getStateData', (req, res) => {
     State.find({}, function(err, docs) {
       if (err) return res.json({success: false, error: err});
       return res.json({success: true, data: docs});
-    });
-  } else if (req.query.date && req.query.count) {
-    State.find({date: req.query.date}, function(err, docs) {
-      if (err) return res.json({success: false, error: err});
-      var recordsProcessed = 0;
-      var numDeaths = 0;
-      var numCases = 0;
-      function deaths() {
-        return res.json({success: true, deaths: numDeaths});
-      }
-      function cases() {
-        return res.json({success: true, cases: numCases});
-      }
-      docs.forEach(record => {
-        recordsProcessed ++;
-        numDeaths += record.deaths;
-        numCases += record.cases;
-        if (recordsProcessed == docs.length) {
-          if (req.query.count == 'cases') {
-            cases();
-          } else if (req.query.count == 'deaths') {
-            deaths();
-          }
-        }
-      });
-    });      
+    });  
   } else if (req.query.date) {
     State.find({date: req.query.date}, function(err, docs) {
       if (err) return res.json({success: false, error: err});
