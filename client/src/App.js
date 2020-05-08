@@ -35,7 +35,7 @@ const fillPaint: MapboxGL.fillPaint = {
 // api calls
 const stateDataQuery = '/api/getStateData?date=';
 const geojsonQuery = '/api/getGeojsonData?date=';
-var dateSelection = '2020-04-17';
+var dateSelection = '2020-01-21';
 
 // table styles
 const useStyles = makeStyles({
@@ -61,7 +61,7 @@ class App extends Component {
     idToDelete: null,
     idToUpdate: null,
     objectToUpdate: null,
-    selectedDay: '2020-04-17',
+    selectedDay: dateSelection,
     geojson: geojsonList,
   };
 

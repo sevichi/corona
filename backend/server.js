@@ -233,9 +233,9 @@ const csvtojson = require('csvtojson');
 
 
 /* Refresh data */
-// Record.remove({}, function(err) {
+// State.remove({}, function(err) {
 //   if (err) throw err;
-//   Record.find({}, function(err, docs) {
+//   State.find({}, function(err, docs) {
 //     if (err) throw err;
 //     console.log('There are ' + docs.length + ' records.');
 //   });
