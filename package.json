@@ -17,7 +17,8 @@
     "morgan": "^1.10.0",
     "path": "^0.12.7",
     "react-day-picker": "^7.4.8",
-    "react-mapbox-gl": "^4.8.3"
+    "react-mapbox-gl": "^4.8.3",
+    "react-native-calendar-slider-carousel": "^1.0.1"
   },
   "devDependencies": {},
   "scripts": {
