@@ -20,11 +20,6 @@ import Paper from '@material-ui/core/Paper';
 
 // map init
 const accessToken = 'pk.eyJ1Ijoic2V2aWNoaSIsImEiOiJjazlqNzJmeGcxaDFuM2Vud3RjeGFhNDBnIn0.O2duU4NkncmDSjjjzzd5uQ';
-// const Map = ReactMapboxGl({
-//   accessToken:
-//     'pk.eyJ1Ijoic2V2aWNoaSIsImEiOiJjazlqNzJmeGcxaDFuM2Vud3RjeGFhNDBnIn0.O2duU4NkncmDSjjjzzd5uQ',
-//   scrollZoom: false,
-// });
 var stateColors = {};
 var hoverCount = 0;
 
@@ -41,7 +36,7 @@ const fillPaint: MapboxGL.fillPaint = {
 // api calls
 const stateDataQuery = '/api/getStateData?date=';
 const geojsonQuery = '/api/getGeojsonData?date=';
-var dateSelection = '2020-01-21';
+var dateSelection = '2020-1-21';
 
 // table styles
 const useStyles = makeStyles({
@@ -77,6 +72,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.handleDayChange = this.handleDayChange.bind(this);
+    this.colorLegend = React.createRef();
   }
   
   formatDate(date) {
@@ -94,25 +90,79 @@ class App extends Component {
   }
 
   handleDayChange(day) {
-    var date = this.formatDate(day);
-    this.setState({ selectedDay: date });
+    const date = this.formatDate(day);
+    // this.setState({ selectedDay: date });
+    this.setDate(day);
     this.getDataFromDb(stateDataQuery, date);
     this.getGeojson(geojsonQuery, date);
     this.updateGeojson();
+  }
+
+  setDate = (newDate) => {
+    const date = newDate || new Date();
+    this.setState({
+      selectedDay:
+        date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate()
+    });
+  };
+
+  getPreviousDate = () => {
+    const { selectedDay } = this.state
+
+    const currentDayInMilli = new Date(selectedDay).getTime()
+    const oneDay = 1000 * 60 *60 *24
+    const previousDayInMilli = currentDayInMilli - oneDay
+    const previousDate = new Date(previousDayInMilli)
+
+    this.handleDayChange(previousDate);
+  }
+
+  getNextDate = () => {
+    const { selectedDay } = this.state
+
+    const currentDayInMilli = new Date(selectedDay).getTime()
+    const oneDay = 1000 * 60 *60 *24
+    const nextDayInMilli = currentDayInMilli + oneDay
+    const nextDate = new Date(nextDayInMilli)
+
+    this.handleDayChange(nextDate);
+  }
+
+  // color function
+  getColor(c) {
+    return c > 10000 ? '#800026' :
+           c > 5000  ? '#BD0026' :
+           c > 1000  ? '#E31A1C' :
+           c > 500   ? '#FC4E2A' :
+           c > 100   ? '#FD8D3C' :
+           c > 10    ? '#FEB24C' :
+           c > 0     ? '#FED976' :
+                       '#FFEDA0';
   }
 
   // when component mounts, first thing it does is fetch all existing data in our db
   // then we incorporate a polling logic so that we can easily see if our db has
   // changed and implement those changes into our UI
   componentDidMount() {
-    this.getDataFromDb(stateDataQuery, dateSelection);
-    this.getGeojson(geojsonQuery, dateSelection);
+    const date = this.formatDate(dateSelection);
+    this.getDataFromDb(stateDataQuery, date);
+    this.getGeojson(geojsonQuery, date);
     if (!this.state.intervalIsSet) {
-      let interval = setInterval(this.getDataFromDb(stateDataQuery, dateSelection), 1000);
+      let interval = setInterval(this.getDataFromDb(stateDataQuery, date), 1000);
       this.setState({ intervalIsSet: interval });
     }
 
-    // mapbox code
+    // load the color legend
+    const cl = this.colorLegend.current;
+    var grades = [0, 10, 100, 500, 1000, 5000, 10000];
+    for (var i = 0; i < grades.length; i++) {
+      console.log(this.getColor(grades[i] + 1));
+      cl.innerHTML += '<i style="background:' + this.getColor(grades[i] + 1) + 
+      ';width: 18px;height: 18px;position: absolute;float: left;margin-right: 8px;opacity: 0.7;"></i> ' 
+      + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+    }
+
+    // mapbox init
     mapboxgl.accessToken = accessToken;
     this.map = new mapboxgl.Map({
       container: 'map', // html element id in render
@@ -122,6 +172,7 @@ class App extends Component {
       scrollZoom: false,
     });
 
+    // mapbox onload
     this.map.on('load', async() => {
       var prevColor = '';
       await fetch(geojsonQuery + dateSelection).then(() => {
@@ -200,19 +251,10 @@ class App extends Component {
         });
       });    
   };
-  // update geojson one by one
-  // updateGeojson = (geojsonQuery, dateSelection) => {
-  //   fetch(geojsonQuery + dateSelection)
-  //     .then((data) => data.json())
-  //     .then((res) => this.setState(state => {
-  //       const gList = 
-  //     }))
-  // }
 
   render() {
 
     const { data } = this.state;
-    // const geojson = this.state.geojson;
     const { selectedDay } = this.state;
     const classes = useStyles;
 
@@ -227,7 +269,26 @@ class App extends Component {
           width: '99vw',
           height: '75vh',
         }}/>
-        <p>Day: { selectedDay }</p>
+        <div ref={this.colorLegend} style={{
+          'line-height': '18px',
+          'text-align': 'left',
+          'color': '#555',
+          'padding': '6px 8px',
+          'font': '14px/16px Arial, Helvetica, sans-serif',
+          'background': 'white',
+          'background': 'rgba(255,255,255,0.7)',
+          'box-shadow': '0 0 15px rgba(0,0,0,0.2)',
+          'position': 'absolute',
+          'z-index': '1 !important',
+          'top': '50%',
+          'left': '2%',
+          'white-space': 'normal',
+        }}></div>
+        <p style={{
+          'font':'16px/18px Arial, Helvetica, sans-serif',
+        }}>Day: { selectedDay }</p>
+        <button onClick={this.getPreviousDate}>Previous</button>
+        <button onClick={this.getNextDate}>Next</button>
         <DayPickerInput 
           onDayChange={this.handleDayChange} 
           selectedDay={this.state.selectedDay}
