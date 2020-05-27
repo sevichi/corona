@@ -36,7 +36,7 @@ const fillPaint: MapboxGL.fillPaint = {
 // api calls
 const stateDataQuery = '/api/getStateData?date=';
 const geojsonQuery = '/api/getGeojsonData?date=';
-var dateSelection = '2020-1-21';
+var dateSelection = '2020-1-20';
 
 // table styles
 const useStyles = makeStyles({
@@ -155,11 +155,14 @@ class App extends Component {
     // load the color legend
     const cl = this.colorLegend.current;
     var grades = [0, 10, 100, 500, 1000, 5000, 10000];
+    cl.innerHTML += '<i style="background:' + this.getColor(0) + 
+    ';width: 18px;height: 16px;position: absolute;float: left;margin-right: 8px;opacity: 0.7;"></i> ' 
+    + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + '0' + '<br>';    
     for (var i = 0; i < grades.length; i++) {
       console.log(this.getColor(grades[i] + 1));
       cl.innerHTML += '<i style="background:' + this.getColor(grades[i] + 1) + 
-      ';width: 18px;height: 18px;position: absolute;float: left;margin-right: 8px;opacity: 0.7;"></i> ' 
-      + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+      ';width: 18px;height: 16px;position: absolute;float: left;margin-right: 8px;opacity: 0.7;"></i> ' 
+      + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + (grades[i]+1) + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
     }
 
     // mapbox init
@@ -280,10 +283,10 @@ class App extends Component {
           'box-shadow': '0 0 15px rgba(0,0,0,0.2)',
           'position': 'absolute',
           'z-index': '1 !important',
-          'top': '50%',
+          'top': '45%',
           'left': '2%',
           'white-space': 'normal',
-        }}></div>
+        }}><b>Number of Cases</b><br/></div>
         <p style={{
           'font':'16px/18px Arial, Helvetica, sans-serif',
         }}>Day: { selectedDay }</p>
@@ -304,7 +307,7 @@ class App extends Component {
             </TableHead>
             <TableBody>
               {data.length <= 0
-              ? 'NO DB ENTRIES YET'
+              ? (<TableRow key={1}><TableCell component="th" scope="row">There are no records for this date</TableCell></TableRow>)
               : data.map((dat, index) => (
                 <TableRow key={index}>
                   <TableCell component="th" scope="row">
