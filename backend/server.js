@@ -16,7 +16,8 @@ const router = express.Router();
 const path = require('path');
 
 // Connect to Mongodb
-const dbpath = 'mongodb://localhost/covid-19';
+// const dbpath = 'mongodb://localhost/covid-19';
+const dbpath = 'mongodb+srv://sevichi:m0qVaNJzCe0uOvRR@cluster0-z9zpq.mongodb.net/covid-19?retryWrites=true&w=majority';
 mongoose.connect(dbpath, { useNewUrlParser: true });
 let db = mongoose.connection;
 

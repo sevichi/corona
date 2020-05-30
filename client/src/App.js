@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 // import ReactDOM from 'react-dom';
 import axios from 'axios';
 // Mapbox
-import ReactMapboxGl, { Layer, Feature, GeoJSONLayer } from 'react-mapbox-gl';
+// import ReactMapboxGl, { Layer, Feature, GeoJSONLayer } from 'react-mapbox-gl';
 // import * as MapboxGL from 'mapbox-gl';
 import mapboxgl from 'mapbox-gl';
 // DayPicker
@@ -10,6 +10,7 @@ import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
 // Material UI
 import { makeStyles } from '@material-ui/core/styles';
+import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -67,6 +68,9 @@ class App extends Component {
     lng: 5,
     lat: 34,
     zoom: 2,
+    hoveredState: 'Hover over a state',
+    hoveredStateCases: null,
+    hoveredStateDeaths: null,
   };
 
   constructor(props) {
@@ -95,7 +99,7 @@ class App extends Component {
     this.setDate(day);
     this.getDataFromDb(stateDataQuery, date);
     this.getGeojson(geojsonQuery, date);
-    this.updateGeojson();
+    this.updateGeojson(geojsonQuery, date);
   }
 
   setDate = (newDate) => {
@@ -140,6 +144,47 @@ class App extends Component {
                        '#FFEDA0';
   }
 
+  // hover state
+  displayState(state) {
+    if (state) {
+      const { data } = this.state;   
+      if (!data[0]) {
+        this.setState({
+          hoveredState: state,
+          hoveredStateCases: 'No records for this date',
+        });   
+      } else {
+        var count = data.length;
+        var set = false;
+        data.forEach(st => {
+          if (state == st['state']) {
+            this.setState({
+              hoveredState: st['state'],
+              hoveredStateCases: 'Cases: ' + st['cases'],
+              hoveredStateDeaths: 'Deaths: ' + st['deaths'],
+            })
+            set = true;
+          }
+          count--;
+        });
+        if (count === 0 && !set) {
+          this.setState({
+            hoveredState: state,
+            hoveredStateCases: 'No records for this date',
+            hoveredStateDeaths: null,
+          });            
+        }
+      }
+    } else {
+      this.setState({ 
+        hoveredState: 'Hover over a state', 
+        hoveredStateCases: null, 
+        hoveredStateDeaths: null, 
+      });
+    }
+
+  }
+
   // when component mounts, first thing it does is fetch all existing data in our db
   // then we incorporate a polling logic so that we can easily see if our db has
   // changed and implement those changes into our UI
@@ -159,7 +204,6 @@ class App extends Component {
     ';width: 18px;height: 16px;position: absolute;float: left;margin-right: 8px;opacity: 0.7;"></i> ' 
     + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + '0' + '<br>';    
     for (var i = 0; i < grades.length; i++) {
-      console.log(this.getColor(grades[i] + 1));
       cl.innerHTML += '<i style="background:' + this.getColor(grades[i] + 1) + 
       ';width: 18px;height: 16px;position: absolute;float: left;margin-right: 8px;opacity: 0.7;"></i> ' 
       + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + (grades[i]+1) + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
@@ -202,12 +246,14 @@ class App extends Component {
             this.map.setPaintProperty(st.geojson.features[0].properties.name, 'fill-opacity', 0.5);
             prevColor = this.map.getLayer(st.geojson.features[0].properties.name);
             this.map.setPaintProperty(st.geojson.features[0].properties.name, 'fill-color', 'white');
+            this.displayState(st.geojson.features[0].properties.name);
           });
 
           this.map.on('mouseleave', st.geojson.features[0].properties.name, () => {
             hoverCount--;
-            if (hoverCount == 0) {
+            if (hoverCount === 0) {
               this.map.getCanvas().style.cursor = '';
+              this.displayState(null);
             }
             this.map.setPaintProperty(st.geojson.features[0].properties.name, 'fill-opacity', 0.7);
             this.map.setPaintProperty(st.geojson.features[0].properties.name, 'fill-color', stateColors[st.geojson.features[0].properties.name]);
@@ -243,7 +289,7 @@ class App extends Component {
       .catch((err) => console.log(err));
   };
 
-  updateGeojson = () => {
+  updateGeojson = (geojsonQuery, dateSelection) => {
     fetch(geojsonQuery + dateSelection)
       .then((data) => data.json())
       .then((res) => {
@@ -260,6 +306,9 @@ class App extends Component {
     const { data } = this.state;
     const { selectedDay } = this.state;
     const classes = useStyles;
+    const { hoveredState } = this.state;
+    const { hoveredStateCases } = this.state;
+    const { hoveredStateDeaths } = this.state;
 
     return (
       <div 
@@ -272,30 +321,49 @@ class App extends Component {
           width: '99vw',
           height: '75vh',
         }}/>
+        <div style={{
+          lineHeight: '18px',
+          textAlign: 'left',
+          'color': '#555',
+          'padding': '6px 8px',
+          'font': '16px/18px Arial, Helvetica, sans-serif',
+          'background': 'rgba(255,255,255,0.7)',
+          boxShadow: '0 0 15px rgba(0,0,0,0.2)',
+          'position': 'absolute',
+          zIndex: '1 !important',
+          'top': '10%',
+          'left': '2%',
+          whiteSpace: 'normal',          
+        }}><b>{ hoveredState }</b>
+          { hoveredStateCases ? <div style={{'font': '14px/16px Arial, Helvetica, sans-serif'}}><em>{ hoveredStateCases }</em></div> : null}
+          { hoveredStateDeaths ? <div style={{'font': '14px/16px Arial, Helvetica, sans-serif'}}><em>{ hoveredStateDeaths }</em></div> : null}
+        </div>
         <div ref={this.colorLegend} style={{
-          'line-height': '18px',
-          'text-align': 'left',
+          lineHeight: '18px',
+          textAlign: 'left',
           'color': '#555',
           'padding': '6px 8px',
           'font': '14px/16px Arial, Helvetica, sans-serif',
-          'background': 'white',
           'background': 'rgba(255,255,255,0.7)',
-          'box-shadow': '0 0 15px rgba(0,0,0,0.2)',
+          boxShadow: '0 0 15px rgba(0,0,0,0.2)',
           'position': 'absolute',
-          'z-index': '1 !important',
-          'top': '45%',
+          zIndex: '1 !important',
+          'top': '50%',
           'left': '2%',
-          'white-space': 'normal',
+          whiteSpace: 'normal',
         }}><b>Number of Cases</b><br/></div>
         <p style={{
           'font':'16px/18px Arial, Helvetica, sans-serif',
         }}>Day: { selectedDay }</p>
-        <button onClick={this.getPreviousDate}>Previous</button>
-        <button onClick={this.getNextDate}>Next</button>
         <DayPickerInput 
           onDayChange={this.handleDayChange} 
-          selectedDay={this.state.selectedDay}
-        />
+          selectedDay={ selectedDay }
+          value={ selectedDay }
+          style={{
+          'font':'14px/16px Arial, Helvetica, sans-serif',
+        }}/>
+        <Button onClick={this.getPreviousDate}>Previous</Button>
+        <Button onClick={this.getNextDate}>Next</Button>
         <TableContainer component={Paper}>
           <Table className={classes.table} aria-label="simple table">
             <TableHead>
