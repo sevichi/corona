@@ -17,6 +17,7 @@ const path = require('path');
 
 // Connect to Mongodb
 // const dbpath = 'mongodb://localhost/covid-19';
+// MONGODB_URI=mongodb+srv://sevichi:m0qVaNJzCe0uOvRR@cluster0-z9zpq.mongodb.net/covid-19?retryWrites=true&w=majority -a limitless-garden-71540
 const dbpath = 'mongodb+srv://sevichi:m0qVaNJzCe0uOvRR@cluster0-z9zpq.mongodb.net/covid-19?retryWrites=true&w=majority';
 mongoose.connect(dbpath, { useNewUrlParser: true });
 let db = mongoose.connection;
