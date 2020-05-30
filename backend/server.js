@@ -216,7 +216,16 @@ router.delete('/deleteData', (req, res) => {
   });  
 });
 
+router.use(function(req, res) {
+  res.sendFile(path.join(__dirname, '../client/build/index.html'));
+});
+
 app.use('/api', router);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static('client/build'));
+}
+
 app.listen(port, () => console.log(`Server listening on port ${port}`));
 
 // Serve the static files from the React app
