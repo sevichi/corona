@@ -157,7 +157,7 @@ class App extends Component {
         var count = data.length;
         var set = false;
         data.forEach(st => {
-          if (state == st['state']) {
+          if (state === st['state']) {
             this.setState({
               hoveredState: st['state'],
               hoveredStateCases: 'Cases: ' + st['cases'],
@@ -221,7 +221,6 @@ class App extends Component {
 
     // mapbox onload
     this.map.on('load', async() => {
-      var prevColor = '';
       await fetch(geojsonQuery + dateSelection).then(() => {
         // const geojson = this.state.geojson;
         this.state.geojson.forEach(st => {
@@ -244,7 +243,6 @@ class App extends Component {
               this.map.getCanvas().style.cursor = 'pointer';
             }
             this.map.setPaintProperty(st.geojson.features[0].properties.name, 'fill-opacity', 0.5);
-            prevColor = this.map.getLayer(st.geojson.features[0].properties.name);
             this.map.setPaintProperty(st.geojson.features[0].properties.name, 'fill-color', 'white');
             this.displayState(st.geojson.features[0].properties.name);
           });
