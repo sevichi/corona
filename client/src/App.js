@@ -35,8 +35,8 @@ const fillPaint: MapboxGL.fillPaint = {
 }
 
 // api calls
-const stateDataQuery = '/api/getStateData?date=';
-const geojsonQuery = '/api/getGeojsonData?date=';
+const stateDataQuery = 'http://limitless-garden-71540.herokuapp.com/api/getStateData?date=';
+const geojsonQuery = 'http://limitless-garden-71540.herokuapp.com/api/getGeojsonData?date=';
 var dateSelection = '2020-1-20';
 
 // table styles
@@ -283,7 +283,10 @@ class App extends Component {
   getGeojson = (geojsonQuery, dateSelection) => {
     fetch(geojsonQuery + dateSelection)
       .then((data) => data.json())
-      .then((res) => this.setState({ geojson: res.geojson }))
+      .then((res) => {
+        console.log(res);
+        this.setState({ geojson: res.geojson });
+      })
       .catch((err) => console.log(err));
   };
 
