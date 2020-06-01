@@ -1,1 +1,1 @@
-api: node backend/server.js
+web: npm run start
