@@ -1,2 +1,2 @@
-web: cd client && serve -s build
+web: cd client && npm run start
 api: npm run start
